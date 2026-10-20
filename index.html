@@ -163,12 +163,10 @@ Restore uses the existing safe merge process. Existing records are not deleted; 
 <div id="modal" class="modal"><div id="box" class="box"></div></div>
 
 <script>
-const BASE_SYSTEM_URL = "https://mendispark-pixel.github.io/Parkmendis/";
-// Google Apps Script Web App URL.
-// After deploying Code.gs, paste the Web App URL here.
+const BASE_SYSTEM_URL = "https://parkhospitals.github.io/5s/";
 const GOOGLE_SHEET_ID = "1CYWaepdS4Q27JXID6wEQjTA7dPgRb_7nTaiZwfQhibw";
-const GOOGLE_DB_API = "https://script.google.com/macros/s/AKfycbzjYzUf1L7s2UxzUn2dOssvEcmB1x2uqqfaCm4k_20MN7WZ_YSYdUMdNNSIVHT41yEkfg/exec";
-const LIVE_DB_ENABLED = !GOOGLE_DB_API.includes("PASTE_YOUR_");
+const GOOGLE_DB_API = "https://script.google.com/macros/s/AKfycbx06vXJ-VzZ8h83nNhkm6wM9Cl9tBq8LtRfw1P-3UzGD3Lj3p2zijQtNEo7UHSckX6_0A/exec";
+const LIVE_DB_ENABLED = true;
 
 const DEPTS=["Reception","OPD","Pharmacy","Ward","Kitchen","Account","Marketing","HR","Maintenance","Crown","IT"]; // fallback; UI should prefer cpConfig().departments
 
