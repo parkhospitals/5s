@@ -357,7 +357,7 @@ async function saveToLiveDatabase(){
     try{ result=JSON.parse(text); }
     catch(_){ throw new Error("Google Apps Script returned a non-JSON response: "+text.slice(0,180)); }
 
-    if(!response.ok || !result.ok) throw new Error(result.error||("HTTP "+response.status));
+    if(!response.ok || !(result.ok === true || result.success === true)) throw new Error(result.error||result.message||("HTTP "+response.status));
 
     if(result.database) db=normaliseDatabaseShape(result.database);
     if(result.config) localStorage.setItem("park5sConfig",JSON.stringify(result.config));
@@ -404,7 +404,7 @@ async function syncFromServer(){
     let result;
     try{ result=JSON.parse(text); }
     catch(_){ throw new Error("Google Apps Script returned a non-JSON response: "+text.slice(0,180)); }
-    if(!response.ok || !result.ok) throw new Error(result.error||("HTTP "+response.status));
+    if(!response.ok || !(result.ok === true || result.success === true)) throw new Error(result.error||result.message||("HTTP "+response.status));
 
     if(result.database) db=normaliseDatabaseShape(result.database);
     if(result.config) localStorage.setItem("park5sConfig",JSON.stringify(result.config));
@@ -519,7 +519,7 @@ async function restoreJsonFile(){
       body:JSON.stringify(Object.assign(buildPayload(db,mergedConfig),{sheetId:GOOGLE_SHEET_ID}))
     });
     const result=await response.json();
-    if(!result.ok) throw new Error(result.error||"Google Sheet merge failed");
+    if(!(result.ok === true || result.success === true)) throw new Error(result.error||result.message||"Google Sheet merge failed");
 
     if(result.database) db=normaliseDatabaseShape(result.database);
     if(result.config) localStorage.setItem("park5sConfig",JSON.stringify(result.config));
