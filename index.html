@@ -49,6 +49,11 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#222}header{
 .sv-actions{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
 .sv-card table{min-width:0}.sv-card h3{margin:0 0 8px}
 .sv-red{border-left:6px solid #e31b23}
+
+/* Interactive room floor plan */
+.fp-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:12px 0}.fp-canvas{position:relative;width:100%;height:560px;min-height:420px;border:3px solid #38546b;border-radius:8px;overflow:hidden;background-color:#fff;background-image:linear-gradient(#e5ebef 1px,transparent 1px),linear-gradient(90deg,#e5ebef 1px,transparent 1px);background-size:24px 24px;touch-action:pan-y}.fp-wall{position:absolute;background:#38546b;pointer-events:none}.fp-door{position:absolute;border:2px dashed #b7791f;background:#fff7e6;color:#7c4a03;padding:4px 8px;font-size:12px}.fp-item{position:absolute;min-width:90px;max-width:150px;min-height:48px;padding:7px 8px;border:2px solid #246b8e;border-radius:7px;background:#e8f5fb;box-shadow:0 2px 5px #0002;cursor:grab;user-select:none;text-align:center;touch-action:none}.fp-item:active{cursor:grabbing}.fp-item .fp-code{display:block;font-weight:800;font-size:11px;overflow-wrap:anywhere}.fp-item .fp-name{display:block;font-size:12px;overflow-wrap:anywhere}.fp-item.furniture{border-color:#8b6b42;background:#fff1d6}.fp-item.selected{outline:3px solid #e9a23b}.fp-hint{font-size:13px;color:#52616b}.fp-print{background:#fff!important;color:#111!important}
+@media print{.fp-toolbar,.fp-hint{display:none!important}.fp-canvas{height:650px!important;break-inside:avoid}}
+
 </style>
 </head><body>
 <header><h1 id="sysHeaderTitle">PARK 5S System</h1><div id="sysHeaderSub">5S • Rooms • Assets • Maintenance • Location Control</div></header>
@@ -57,6 +62,7 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#222}header{
 
 <section id="rooms" class="page"><h2>Buildings / Floors / Departments / Rooms</h2><div class="notice">New buildings and rooms can be added whenever the hospital expands.</div><button id="addRoomBtn" onclick="roomForm()">+ Add Room</button><div class="panel"><table><thead><tr><th>Building</th><th>Floor</th><th>Department</th><th>Room</th><th>Responsible</th><th>Status</th><th>Actions</th></tr></thead><tbody id="roomsT"></tbody></table></div></section>
 
+<section id="floorplan" class="page"><h2>Interactive 2D Room Floor Plan</h2><div class="notice">Drag items to their correct positions. Use this as the approved location standard for 5S checks. Save the plan after arranging items.</div><div class="panel"><div class="fp-toolbar"><label>Room<select id="fpRoom" onchange="renderFloorPlan()"></select></label><label>Add furniture<select id="fpFurnitureType"><option>Desk</option><option>Chair</option><option>Cabinet</option><option>Bed</option><option>Examination Bed</option><option>Table</option><option>Bin</option><option>Shelf</option><option>Other</option></select></label><button onclick="fpAddFurniture()">+ Add Furniture</button><button onclick="fpSave()">Save 2D Plan</button><button onclick="fpReset()">Auto Arrange</button><button onclick="fpPrint()">Print Plan</button></div><p class="fp-hint">Blue items are registered assets; tan items are furniture/layout markers. Drag them to match the real room. Select an item to edit its label or remove it.</p><div id="fpCanvas" class="fp-canvas" aria-label="Interactive room floor plan"><div class="fp-door" style="left:4%;bottom:0">DOOR / ENTRY</div></div><div id="fpSummary" class="fp-hint"></div></div></section>
 <section id="assets" class="page"><h2>Asset, Equipment & Small Item Register</h2><button id="addAssetBtn" onclick="assetForm()">+ Add Item</button><div class="panel"><table><thead><tr><th>Photo</th><th>Identification Code</th><th>Type</th><th>Item</th><th>Dept</th><th>Room</th><th>Condition</th><th>Purchase</th><th>Value</th><th>Status</th><th></th></tr></thead><tbody id="assetsT"></tbody></table></div></section>
 <section id="location" class="page"><h2>Expected vs Actual Location Control</h2><div class="notice">Use this area to identify missing, transferred or unregistered items.</div><div class="panel"><table><thead><tr><th>Room</th><th>Item</th><th>Expected</th><th>Actual</th><th>Result</th><th>Action</th></tr></thead><tbody id="locT"></tbody></table></div></section>
 <section id="maintenance" class="page"><h2>Maintenance Control</h2><div id="mcards" class="cards"></div><div class="panel"><button id="addMaintenanceBtn" onclick="maintForm()">+ Record Maintenance</button><table><thead><tr><th>Asset</th><th>ID</th><th>Last</th><th>Next Due</th><th>Provider</th><th>Cost</th></tr></thead><tbody id="maintT"></tbody></table></div></section>
@@ -1032,6 +1038,37 @@ function printAuditReport(){
   const out=document.getElementById("auditReport");if(!out)return;const w=window.open("","_blank");if(!w){alert("Please allow pop-ups for this site to print.");return}w.document.write(`<html><head><title>5S Audit Reports</title><style>body{font-family:Arial;padding:25px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:7px;font-size:11px}th{background:#eef2f5}.badge{padding:3px 6px;border-radius:10px}</style></head><body><h1>PARK 5S Management System</h1><h2>5S Audit Reports</h2>${out.innerHTML}</body></html>`);w.document.close();w.print()
 }
 
+
+let fpDrag=null,fpJustDragged=false;
+function openRoomFloorPlan(room){
+  const u=typeof sessionUser==='function'&&sessionUser();
+  if(u&&typeof canAccess==='function'&&!isAdmin()&&!canAccess('rooms')){alert('Your administrator has not given your account access to Rooms.');return}
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('floorplan').classList.add('active');
+  renderFloorPlan(room);
+}
+function fpRoomName(){return document.getElementById('fpRoom')?.value||''}
+function fpCurrent(){db.floorplans=Array.isArray(db.floorplans)?db.floorplans:[];let room=fpRoomName();let p=db.floorplans.find(x=>x.room===room);if(!p){p={room,items:[]};db.floorplans.push(p)}return p}
+function renderFloorPlan(preferred){
+ const sel=document.getElementById('fpRoom');if(!sel)return;
+ const old=preferred||sel.value;sel.innerHTML=db.rooms.map(r=>`<option value="${safe(r.room)}" ${r.room===old?'selected':''}>${safe(r.room)} — ${safe(r.dept||'')}</option>`).join('');
+ const room=sel.value, canvas=document.getElementById('fpCanvas');if(!canvas)return;
+ let p=(db.floorplans||[]).find(x=>x.room===room);
+ if(!p){p={room,items:[]};db.floorplans=db.floorplans||[];db.floorplans.push(p)}
+ const assets=db.assets.filter(a=>a.room===room);
+ // Ensure each registered asset has a draggable position in this room's plan.
+ assets.forEach((a,i)=>{if(!p.items.some(x=>x.assetId===a.id)){p.items.push({id:'asset-'+a.id,assetId:a.id,name:a.name,code:a.id,type:a.type||'Equipment',x:8+(i%4)*22,y:12+Math.floor(i/4)*17,w:14,h:10,kind:'asset'})}});
+ p.items=p.items.filter(x=>x.kind!=='asset'||assets.some(a=>a.id===x.assetId));
+ canvas.innerHTML='<div class="fp-door" style="left:4%;bottom:0">DOOR / ENTRY</div>'+p.items.map(it=>`<div class="fp-item ${it.kind==='furniture'?'furniture':''}" data-fpid="${safe(it.id)}" style="left:${Math.max(0,Math.min(84,+it.x||0))}%;top:${Math.max(0,Math.min(86,+it.y||0))}%;width:${it.w||14}%;min-height:${it.h||10}%" onpointerdown="fpPointerDown(event,'${String(it.id).replaceAll("'","\\'")}')" onclick="fpSelect('${String(it.id).replaceAll("'","\\'")}')"><span class="fp-code">${safe(it.code||'LAYOUT')}</span><span class="fp-name">${safe(it.name||'Item')}</span></div>`).join('');
+ document.getElementById('fpSummary').textContent=`${room}: ${assets.length} registered asset(s), ${p.items.filter(x=>x.kind==='furniture').length} layout marker(s). Drag objects, then Save 2D Plan.`;
+}
+function fpPointerDown(e,id){if(e.button!==undefined&&e.button!==0)return;fpDrag={id,startX:e.clientX,startY:e.clientY,moved:false};const el=e.currentTarget;el.setPointerCapture?.(e.pointerId);const move=ev=>{if(!fpDrag||fpDrag.id!==id)return;const canvas=document.getElementById('fpCanvas'),r=canvas.getBoundingClientRect(),p=fpCurrent(),it=p.items.find(x=>x.id===id);if(!it)return;it.x=Math.max(0,Math.min(84,((ev.clientX-r.left)/r.width)*100-7));it.y=Math.max(0,Math.min(86,((ev.clientY-r.top)/r.height)*100-4));fpDrag.moved=true;fpJustDragged=true;el.style.left=it.x+'%';el.style.top=it.y+'%'};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);fpDrag=null};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+function fpSelect(id){if(fpJustDragged){fpJustDragged=false;return}if(fpDrag?.moved)return;const p=fpCurrent(),it=p.items.find(x=>x.id===id);if(!it)return;const name=prompt('Item label / name:',it.name||'');if(name===null)return;it.name=name.trim()||it.name;if(it.kind==='furniture'){const code=prompt('Identification code (optional):',it.code||'LAYOUT');if(code!==null)it.code=code.trim()||'LAYOUT';if(confirm('Remove this furniture marker instead?')){p.items=p.items.filter(x=>x.id!==id)}}renderFloorPlan()}
+function fpAddFurniture(){if(!isAdmin()){alert('Administrator access is required to edit a floor plan.');return}const p=fpCurrent(),type=document.getElementById('fpFurnitureType').value,id='furn-'+Date.now();p.items.push({id,kind:'furniture',name:type,code:'LAYOUT',type,x:10+(p.items.length%4)*18,y:15+Math.floor(p.items.length/4)*14,w:14,h:10});renderFloorPlan()}
+function fpSave(){if(!isAdmin()){alert('Administrator access is required to save a floor plan.');return}localCacheSave();saveToLiveDatabase().then(ok=>{if(ok){logActivity('Saved 2D Floor Plan',fpRoomName());alert('2D floor plan saved.')}else alert('Plan saved in this browser cache, but live database sync failed. Please check the connection and try again.')})}
+function fpReset(){if(!isAdmin()){alert('Administrator access is required.');return}const p=fpCurrent();p.items=p.items.filter(x=>x.kind==='furniture');renderFloorPlan()}
+function fpPrint(){const room=fpRoomName(),canvas=document.getElementById('fpCanvas');const w=window.open('','_blank');if(!w){alert('Please allow pop-ups to print.');return}w.document.write(`<html><head><title>2D Floor Plan - ${safe(room)}</title><style>body{font-family:Arial;padding:20px} .fp-canvas{position:relative;height:650px;border:3px solid #38546b;background-image:linear-gradient(#e5ebef 1px,transparent 1px),linear-gradient(90deg,#e5ebef 1px,transparent 1px);background-size:24px 24px}.fp-item{position:absolute;min-width:90px;max-width:150px;padding:7px;border:2px solid #246b8e;border-radius:7px;background:#e8f5fb;text-align:center;box-sizing:border-box}.fp-item.furniture{border-color:#8b6b42;background:#fff1d6}.fp-code,.fp-name{display:block;font-size:12px;overflow-wrap:anywhere}.fp-code{font-weight:bold}.fp-door{position:absolute;left:4%;bottom:0;border:2px dashed #b7791f;padding:4px}</style></head><body><h1>PARK 5S Management System</h1><h2>2D Room Floor Plan: ${safe(room)}</h2>${canvas.outerHTML}<p>Use the plan as the approved standard during 5S audits. Verify actual physical placement before marking items as compliant.</p></body></html>`);w.document.close();w.print()}
+
 function render(){
   let today=new Date().toISOString().slice(0,10);
   let missingCount=db.assets.filter(a=>a.status=="Missing").length;
@@ -1049,7 +1086,7 @@ function render(){
     ["Red Tags (Open)",openTagsCount]
   ].map(x=>`<div class=card>${x[0]}<b>${x[1]}</b></div>`).join("");
 
-  document.getElementById("roomsT").innerHTML=db.rooms.map(r=>`<tr><td>${r.building}</td><td>${r.floor}</td><td>${r.dept}</td><td>${r.room}</td><td>${r.person}</td><td>${r.status}</td><td>${isAdmin()?`<button onclick='roomForm(${JSON.stringify(r)})'>Edit</button> <button onclick="printRoomLabel('${r.id}')">Print Label</button>`:`<button onclick="printRoomLabel('${r.id}')">View Label</button>`}</td></tr>`).join("");
+  document.getElementById("roomsT").innerHTML=db.rooms.map(r=>`<tr><td>${r.building}</td><td>${r.floor}</td><td>${r.dept}</td><td>${r.room}</td><td>${r.person}</td><td>${r.status}</td><td>${isAdmin()?`<button onclick='roomForm(${JSON.stringify(r)})'>Edit</button> <button onclick="openRoomFloorPlan('${String(r.room).replaceAll("'", "\\'")}')">2D Plan</button> <button onclick="printRoomLabel('${r.id}')">Print Label</button>`:`<button onclick="openRoomFloorPlan('${String(r.room).replaceAll("'", "\\'")}')">2D Plan</button> <button onclick="printRoomLabel('${r.id}')">View Label</button>`}</td></tr>`).join("");
   document.getElementById("assetsT").innerHTML=db.assets.map(a=>`<tr><td>${a.photo ? `<img src="${a.photo}" class="item-thumb">` : '—'}</td><td>${a.id}</td><td>${a.type||"Equipment"}</td><td>${a.name}</td><td>${a.dept}</td><td>${a.room}</td><td>${a.condition}</td><td>${a.purchase||"-"}</td><td>Rs. ${(+a.value||0).toLocaleString()}</td><td>${a.status}</td><td>${isAdmin()?`<button onclick='assetForm(${JSON.stringify(a)})'>Edit</button> <button onclick="move('${a.id}')">Move</button> <button onclick="missing('${a.id}')">Missing</button> <button onclick='redTagForm(${JSON.stringify(a)})' class="redbtn">Red Tag</button>`:""}</td></tr>`).join("");
   document.getElementById("locT").innerHTML=db.assets.map(a=>`<tr><td>${a.room}</td><td>${a.name} (${a.id})</td><td>1</td><td>${a.status=="Missing"?0:1}</td><td><span class="badge ${a.status=="Missing"?"bad":"ok"}">${a.status=="Missing"?"Missing":"Present"}</span></td><td>${a.status=="Missing"?"Investigate":"Verified"}</td></tr>`).join("");
   document.getElementById("mcards").innerHTML=[["Due Today/Overdue",dueCount],["Under Maintenance",db.assets.filter(a=>a.status=="Under Maintenance").length],["Needs Repair",repairCount]].map(x=>`<div class=card>${x[0]}<b>${x[1]}</b></div>`).join("");
@@ -1071,6 +1108,7 @@ function render(){
   document.getElementById("summary").textContent=JSON.stringify({generated:new Date().toISOString(),rooms:db.rooms.length,assets:db.assets.length,missing:missingCount,needsRepair:repairCount,maintenanceDue:dueCount},null,2);
   renderRedTagPreview();
   renderLabelsTab();
+  if(document.getElementById("floorplan")?.classList.contains("active"))renderFloorPlan();
 }
 
 function exportData(){alert("JSON export has been removed. The system now uses the live Google database.");}
