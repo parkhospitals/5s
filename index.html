@@ -21,16 +21,16 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#222}header{
 .tagresolved{background:#dcfce7;color:#166534}
 
 /* UNIFIED LABEL STYLES */
-.lbl-sheet { display: grid; grid-template-columns: repeat(4, 48mm); grid-auto-rows: 33mm; gap: 1.3mm; padding: 0; background: #fff; border-radius: 0; justify-content: start; align-content: start; }
-.lbl-card { background: #fff; border: 1px solid #777; border-radius: 1mm; box-sizing: border-box; position: relative; overflow: hidden; color: #111; font-family: Arial, sans-serif; padding: 1.2mm; width: 48mm; height: 33mm; break-inside: avoid; page-break-inside: avoid; }
+.lbl-sheet { display: grid; grid-template-columns: repeat(2, 80mm); grid-auto-rows: 20mm; gap: 1.3mm; padding: 0; background: #fff; border-radius: 0; justify-content: start; align-content: start; }
+.lbl-card { background: #fff; border: 1px solid #777; border-radius: 1mm; box-sizing: border-box; position: relative; overflow: hidden; color: #111; font-family: Arial, sans-serif; padding: 0.7mm; width: 80mm; height: 20mm; break-inside: avoid; page-break-inside: avoid; }
 .dept-color-bar{height:2mm;border-radius:0;margin:-2mm -2mm 1.5mm}.audit-report-card{border-left:6px solid #123b5d}.score-good{background:#dcfce7;color:#166534}.score-mid{background:#fef3c7;color:#92400e}.score-low{background:#fee2e2;color:#991b1b}
 .lbl-header { display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #0056b3; padding-bottom: 0.5mm; margin-bottom: 0.7mm; font-weight: bold; font-size: 7pt; color: #0056b3; }
 .lbl-body { display: flex; justify-content: space-between; align-items: center; }
 .lbl-details { font-size: 5.8pt; line-height: 1.45; color: #000; min-width: 0; overflow-wrap: anywhere; }
 .lbl-details b { color: #000; font-weight: bold; }
 .lbl-details span { color: #0056b3; font-weight: bold; }
-.lbl-qr-box { text-align: center; flex: 0 0 18mm; width: 18mm; }
-.lbl-qr-box .qr-sub { font-size: 5pt; color: #333; margin-top: 0.5mm; font-weight: bold; }\n.lbl-qr-box canvas,.lbl-qr-box img { width: 17mm !important; height: 17mm !important; image-rendering: pixelated; }\n@page { size: A4 portrait; margin: 7mm; }\n@media print { html,body { margin:0 !important; padding:0 !important; width:100%; background:#fff !important; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .lbl-sheet { width:196mm; grid-template-columns:repeat(4,48mm); grid-auto-rows:33mm; gap:1.3mm; padding:0; margin:0 auto; justify-content:start; } .lbl-card { width:48mm; height:33mm; box-shadow:none; } }
+.lbl-qr-box { text-align: center; flex: 0 0 13.5mm; width: 13.5mm; }
+.lbl-qr-box .qr-sub { font-size: 5pt; color: #333; margin-top: 0.5mm; font-weight: bold; }\n.lbl-qr-box canvas,.lbl-qr-box img { width: 12mm !important; height: 12mm !important; image-rendering: pixelated; }\n@page { size: A4 portrait; margin: 7mm; }\n@media print { html,body { margin:0 !important; padding:0 !important; width:100%; background:#fff !important; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .lbl-sheet { width:196mm; grid-template-columns:repeat(2,80mm); grid-auto-rows:20mm; gap:1.3mm; padding:0; margin:0 auto; justify-content:start; } .lbl-card { width:80mm; height:20mm; box-shadow:none; } }
 
 /* Item Image Styles */
 .item-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
