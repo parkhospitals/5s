@@ -21,16 +21,16 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#222}header{
 .tagresolved{background:#dcfce7;color:#166534}
 
 /* UNIFIED LABEL STYLES */
-.lbl-sheet { display: flex; flex-wrap: wrap; gap: 15px; padding: 15px; background: #eef2f5; border-radius: 8px; justify-content: center; }
-.lbl-card { background: #fff; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; position: relative; overflow: hidden; color: #111; font-family: Arial, sans-serif; padding: 12px; width: 340px; }
-.dept-color-bar{height:8px;border-radius:6px 6px 0 0;margin:-12px -12px 10px}.audit-report-card{border-left:6px solid #123b5d}.score-good{background:#dcfce7;color:#166534}.score-mid{background:#fef3c7;color:#92400e}.score-low{background:#fee2e2;color:#991b1b}
-.lbl-header { display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #0056b3; padding-bottom: 6px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #0056b3; }
+.lbl-sheet { display: grid; grid-template-columns: repeat(4, 48mm); grid-auto-rows: 53mm; gap: 1.3mm; padding: 0; background: #fff; border-radius: 0; justify-content: start; align-content: start; }
+.lbl-card { background: #fff; border: 1px solid #777; border-radius: 1mm; box-sizing: border-box; position: relative; overflow: hidden; color: #111; font-family: Arial, sans-serif; padding: 2mm; width: 48mm; height: 53mm; break-inside: avoid; page-break-inside: avoid; }
+.dept-color-bar{height:2mm;border-radius:0;margin:-2mm -2mm 1.5mm}.audit-report-card{border-left:6px solid #123b5d}.score-good{background:#dcfce7;color:#166534}.score-mid{background:#fef3c7;color:#92400e}.score-low{background:#fee2e2;color:#991b1b}
+.lbl-header { display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #0056b3; padding-bottom: 1mm; margin-bottom: 1.5mm; font-weight: bold; font-size: 7pt; color: #0056b3; }
 .lbl-body { display: flex; justify-content: space-between; align-items: center; }
-.lbl-details { font-size: 12px; line-height: 1.7; color: #000; }
+.lbl-details { font-size: 5.8pt; line-height: 1.45; color: #000; min-width: 0; overflow-wrap: anywhere; }
 .lbl-details b { color: #000; font-weight: bold; }
 .lbl-details span { color: #0056b3; font-weight: bold; }
-.lbl-qr-box { text-align: center; }
-.lbl-qr-box .qr-sub { font-size: 8px; color: #555; margin-top: 4px; font-weight: bold; }
+.lbl-qr-box { text-align: center; flex: 0 0 22mm; width: 22mm; }
+.lbl-qr-box .qr-sub { font-size: 5pt; color: #333; margin-top: 1mm; font-weight: bold; }\n.lbl-qr-box canvas,.lbl-qr-box img { width: 21mm !important; height: 21mm !important; image-rendering: pixelated; }\n@page { size: A4 portrait; margin: 7mm; }\n@media print { html,body { margin:0 !important; padding:0 !important; width:100%; background:#fff !important; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .lbl-sheet { width:196mm; grid-template-columns:repeat(4,48mm); grid-auto-rows:53mm; gap:1.3mm; padding:0; margin:0 auto; justify-content:start; } .lbl-card { width:48mm; height:53mm; box-shadow:none; } }
 
 /* Item Image Styles */
 .item-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
@@ -800,7 +800,15 @@ function generateLabelHTML(item, isRoom = false) {
 }
 function attachCodesToLabels(container) {
    container.querySelectorAll('.qr-code-target').forEach(el => {
-      new QRCode(el, { text: el.getAttribute('data-qr') || '', width: 62, height: 62 });
+      const raw = el.getAttribute('data-qr') || '';
+      let target = raw;
+      try { target = new URL(raw, BASE_SYSTEM_URL).href; } catch (_) {}
+      el.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+         new QRCode(el, { text: target, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.H });
+      } else {
+         el.textContent = 'QR unavailable';
+      }
    });
 }
 
@@ -818,7 +826,7 @@ function printRoomLabel(roomId) {
    <script>
    const BASE_SYSTEM_URL = "${BASE_SYSTEM_URL}";
    (${attachCodesToLabels.toString()})(document);
-   setTimeout(() => { window.print(); }, 400);
+   setTimeout(() => { window.print(); }, 1200);
    <\/script>
    </body></html>`);
    w.document.close();
@@ -876,14 +884,14 @@ function printSelectedLabels() {
    w.document.write(`<html><head><title>Batch Label Print</title>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
    <style>
-   body { font-family: Arial, sans-serif; padding: 20px; background: #fff; }
+   @page { size: A4 portrait; margin: 7mm; } body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; }
    ${document.querySelector('style').innerHTML}
    </style></head><body>
    <div class="lbl-sheet">${selectedHTML}</div>
    <script>
    const BASE_SYSTEM_URL = "${BASE_SYSTEM_URL}";
    (${attachCodesToLabels.toString()})(document);
-   setTimeout(() => { window.print(); }, 500);
+   setTimeout(() => { window.print(); }, 1200);
    <\/script>
    </body></html>`);
    w.document.close();
